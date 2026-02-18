@@ -1,36 +1,46 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# OVSE Admin Portal
 
-## Getting Started
+A high-fidelity, professional-grade governance and application review portal for the Unique Identification Authority of India (UIDAI).
 
-First, run the development server:
+## Project Overview
+
+This portal facilitates a rigorous, 4-level approval workflow for OVSE registration applications. It is designed with a premium, UIDAI-compliant aesthetic and features a highly specialized experience tailored to each administrative level.
+
+## Key Features
+
+### 1. Differentiated RBAC Review Workflow
+The system provides a governed, sequential review process across four distinct stages:
+- **Level 1 (Recommendation Hub)**: Scrutiny of document integrity and eligibility.
+- **Level 2 (Review Center)**: Deep-dive examination against regulatory policies.
+- **Level 3 (Preapproval Dashboard)**: High-level risk profiling and directorate preparation.
+- **Level 4 (Approval Portal)**: Final executive authorization for registration.
+
+### 2. Premium UI & UX Experience
+- **Dual-Pane Review Dialog**: A split-screen layout where application data is scrollable on the left, and role-specific actions/checklists are fixed on the right.
+- **Role-Aware Design**: Headers, buttons, and task descriptions dynamically adjust based on the active user's level (e.g., "Scrutiny Checklist" for L1 vs. "Final Authorization" for L4).
+- **Embedded Validation Checklists**: Pre-defined checks for each level to ensure thorough compliance and data integrity.
+
+### 3. Technical Highlights
+- **Framework**: Built with **Next.js 16 (App Router)** and **TypeScript**.
+- **UI Components**: Hand-crafted layouts using **Tailwind CSS 4** and **Shadcn UI**.
+- **Role Persistence**: Custom mock-auth implementation with `localStorage` synchronization to maintain role state during navigation.
+- **Data Visualization**: Integrated **Recharts** for real-time efficiency tracking and administrative trends.
+
+## Local Development
 
 ```bash
+# Install dependencies
+npm install
+
+# Start the development server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Dashboard Access (Demo Links)
+- [Level 1: Recommendation Hub](http://localhost:3000/dashboard/level_1)
+- [Level 2: Review Center](http://localhost:3000/dashboard/level_2)
+- [Level 3: Preapproval Dashboard](http://localhost:3000/dashboard/level_3)
+- [Level 4: Approval Portal](http://localhost:3000/dashboard/level_4)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+*Created for the Unique Identification Authority of India (UIDAI) governance framework.*
