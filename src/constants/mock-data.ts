@@ -6,7 +6,7 @@ export const MOCK_APPLICATIONS: Application[] = [
         entityName: "Innovate Inc.",
         entityCategory: "Private Organization",
         submissionDate: "15-08-2025",
-        status: ApplicationStatus.PENDING,
+        status: ApplicationStatus.SUBMITTED,
         currentLevel: AdminLevel.LEVEL_1,
         recommendations: [],
         data: {
@@ -36,7 +36,7 @@ export const MOCK_APPLICATIONS: Application[] = [
         entityName: "Tech Solutions",
         entityCategory: "LLP",
         submissionDate: "16-08-2025",
-        status: ApplicationStatus.UNDER_EXAMINATION,
+        status: ApplicationStatus.L1_APPROVED,
         currentLevel: AdminLevel.LEVEL_2,
         recommendations: [
             {
@@ -53,7 +53,7 @@ export const MOCK_APPLICATIONS: Application[] = [
         entityName: "Global Corp",
         entityCategory: "Public Limited",
         submissionDate: "17-08-2025",
-        status: ApplicationStatus.REJECTED,
+        status: ApplicationStatus.L1_REJECTED,
         currentLevel: AdminLevel.LEVEL_3,
         recommendations: [],
     },
@@ -62,7 +62,7 @@ export const MOCK_APPLICATIONS: Application[] = [
         entityName: "OVSE Name",
         entityCategory: "Partnership",
         submissionDate: "18-08-2025",
-        status: ApplicationStatus.APPROVED,
+        status: ApplicationStatus.ACTIVE,
         currentLevel: AdminLevel.LEVEL_4,
         recommendations: [],
     },
@@ -71,8 +71,8 @@ export const MOCK_APPLICATIONS: Application[] = [
         entityName: "Director's Hub",
         entityCategory: "Government Agency",
         submissionDate: "19-08-2025",
-        status: ApplicationStatus.PENDING_FINAL_APPROVAL,
-        currentLevel: AdminLevel.LEVEL_4,
+        status: ApplicationStatus.L2_APPROVED,
+        currentLevel: AdminLevel.LEVEL_3,
         recommendations: [
             {
                 level: AdminLevel.LEVEL_1,

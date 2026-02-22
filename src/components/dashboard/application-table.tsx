@@ -18,14 +18,12 @@ import { Input } from "@/components/ui/input";
 import { ApplicationReviewDetail } from "./application-review-detail";
 
 const statusColors: Record<ApplicationStatus, string> = {
-    [ApplicationStatus.PENDING]: "bg-orange-100 text-orange-700 border-orange-200",
-    [ApplicationStatus.UNDER_SCRUTINY]: "bg-blue-100 text-blue-700 border-blue-200",
-    [ApplicationStatus.UNDER_EXAMINATION]: "bg-cyan-100 text-cyan-700 border-cyan-200",
-    [ApplicationStatus.UNDER_REVIEW]: "bg-purple-100 text-purple-700 border-purple-200",
-    [ApplicationStatus.PENDING_FINAL_APPROVAL]: "bg-indigo-100 text-indigo-700 border-indigo-200",
-    [ApplicationStatus.APPROVED]: "bg-emerald-100 text-emerald-700 border-emerald-200",
-    [ApplicationStatus.REJECTED]: "bg-red-100 text-red-700 border-red-200",
-    [ApplicationStatus.CORRECTION_REQUIRED]: "bg-amber-100 text-amber-700 border-amber-200",
+    [ApplicationStatus.SUBMITTED]: "bg-orange-100 text-orange-700 border-orange-200",
+    [ApplicationStatus.L1_REJECTED]: "bg-red-100 text-red-700 border-red-200",
+    [ApplicationStatus.L1_APPROVED]: "bg-blue-100 text-blue-700 border-blue-200",
+    [ApplicationStatus.L2_APPROVED]: "bg-cyan-100 text-cyan-700 border-cyan-200",
+    [ApplicationStatus.ACTIVE]: "bg-emerald-100 text-emerald-700 border-emerald-200",
+    [ApplicationStatus.REVOKED]: "bg-rose-100 text-rose-700 border-rose-200",
 };
 
 export function ApplicationTable({ level }: { level: AdminLevel }) {
@@ -57,7 +55,12 @@ export function ApplicationTable({ level }: { level: AdminLevel }) {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {MOCK_APPLICATIONS.map((app) => (
+                        {MOCK_APPLICATIONS.filter(app => {
+                            if (level === AdminLevel.LEVEL_4) {
+                                return app.currentLevel === AdminLevel.LEVEL_4 || app.status === ApplicationStatus.ACTIVE;
+                            }
+                            return app.currentLevel === level;
+                        }).map((app) => (
                             <TableRow key={app.id}>
                                 <TableCell className="font-medium">{app.id}</TableCell>
                                 <TableCell>{app.entityName}</TableCell>

@@ -6,14 +6,12 @@ export enum AdminLevel {
 }
 
 export enum ApplicationStatus {
-    PENDING = 'PENDING',
-    UNDER_SCRUTINY = 'UNDER_SCRUTINY', // Level 1
-    UNDER_EXAMINATION = 'UNDER_EXAMINATION', // Level 2
-    UNDER_REVIEW = 'UNDER_REVIEW', // Level 3
-    PENDING_FINAL_APPROVAL = 'PENDING_FINAL_APPROVAL', // Level 4
-    APPROVED = 'APPROVED',
-    REJECTED = 'REJECTED',
-    CORRECTION_REQUIRED = 'CORRECTION_REQUIRED',
+    SUBMITTED = 'SUBMITTED', // Initial scrutiny
+    L1_REJECTED = 'L1_REJECTED', // Rejected at Level 1 (Back to Entity)
+    L1_APPROVED = 'L1_APPROVED', // Moves to L2
+    L2_APPROVED = 'L2_APPROVED', // Moves to L3
+    ACTIVE = 'ACTIVE', // L3 approved + Client ID generated
+    REVOKED = 'REVOKED', // Revoked by L4 Action
 }
 
 export interface User {
@@ -37,6 +35,15 @@ export interface Application {
         comments: string;
         timestamp: string;
     }[];
+    is_ftr?: boolean;
+    l1_comments?: string;
+    l1_approved_by?: string;
+    l2_approved_by?: string;
+    l3_approved_by?: string;
+    client_id?: string;
+    x509_certificate?: string;
+    revoked_at?: string;
+    revocationReason?: string;
     data?: {
         entityDetails: {
             address: string;
@@ -56,6 +63,9 @@ export interface Application {
             panNumber: string;
             gstNumber: string;
             tanNumber: string;
+        };
+        technicalInfo?: {
+            publicKey?: string;
         };
     };
 }

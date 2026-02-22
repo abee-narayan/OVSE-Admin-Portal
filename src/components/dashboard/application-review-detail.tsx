@@ -25,7 +25,9 @@ import {
 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import React from "react";
+import React, { useMemo } from "react";
+import { validateApplication } from "@/lib/services/validation-service";
+import { processAction } from "@/lib/services/workflow-engine";
 
 interface AppReviewProps {
     application: Application;
@@ -36,11 +38,21 @@ interface AppReviewProps {
 export function ApplicationReviewDetail({ application, userRole, onClose }: AppReviewProps) {
     const [comments, setComments] = useState("");
     const [recommendation, setRecommendation] = useState<'APPROVE' | 'REJECT' | 'CORRECTION' | null>(null);
+    const [isFtr, setIsFtr] = useState(true);
 
     const canApprove = (userRole === AdminLevel.LEVEL_1 && application.currentLevel === AdminLevel.LEVEL_1) ||
         (userRole === AdminLevel.LEVEL_2 && application.currentLevel === AdminLevel.LEVEL_2) ||
         (userRole === AdminLevel.LEVEL_3 && application.currentLevel === AdminLevel.LEVEL_3) ||
         (userRole === AdminLevel.LEVEL_4 && application.currentLevel === AdminLevel.LEVEL_4);
+
+    const isL4RevocationView = userRole === AdminLevel.LEVEL_4 && application.status === ApplicationStatus.ACTIVE;
+
+    const evaluation = useMemo(() => {
+        if (userRole === AdminLevel.LEVEL_1) {
+            return validateApplication(application);
+        }
+        return null;
+    }, [application, userRole]);
 
     const getRoleTerminology = (role: AdminLevel) => {
         switch (role) {
@@ -54,13 +66,13 @@ export function ApplicationReviewDetail({ application, userRole, onClose }: AppR
 
     return (
         <Dialog open={true} onOpenChange={onClose}>
-            <DialogContent className="max-w-[95vw] w-[1400px] h-[90vh] p-0 flex flex-col gap-0 border-none shadow-2xl overflow-hidden rounded-xl">
+            <DialogContent className="w-[75vw] max-w-[75vw] sm:max-w-[75vw] h-[90vh] p-0 flex flex-col gap-0 border-none shadow-2xl overflow-hidden rounded-xl">
                 {/* Header Section */}
                 <DialogHeader className="p-6 bg-white border-b shrink-0">
                     <div className="flex flex-row items-center justify-between">
-                        <div className="space-y-1">
-                            <div className="flex items-center gap-3">
-                                <DialogTitle className="text-2xl font-extrabold tracking-tight text-slate-900">
+                        <div className="space-y-2">
+                            <div className="flex items-center flex-wrap gap-3">
+                                <DialogTitle className="text-xl lg:text-2xl font-extrabold tracking-tight text-slate-900 mr-2">
                                     {getRoleTerminology(userRole)}: {application.entityName}
                                 </DialogTitle>
                                 <Badge className="bg-blue-600 text-white font-mono px-3 py-1 rounded-full border-none shadow-sm">
@@ -70,7 +82,7 @@ export function ApplicationReviewDetail({ application, userRole, onClose }: AppR
                                     {application.currentLevel.replace('_', ' ')}
                                 </Badge>
                             </div>
-                            <DialogDescription className="text-slate-500 font-medium flex items-center gap-4">
+                            <DialogDescription className="text-slate-500 font-medium flex-wrap flex items-center gap-x-4 gap-y-2">
                                 <span className="flex items-center gap-1.5"><Clock className="h-4 w-4" /> Submitted: {application.submissionDate}</span>
                                 <span className="flex items-center gap-1.5"><FileText className="h-4 w-4" /> Category: {application.entityCategory}</span>
                             </DialogDescription>
@@ -78,15 +90,39 @@ export function ApplicationReviewDetail({ application, userRole, onClose }: AppR
                     </div>
                 </DialogHeader>
 
-                <div className="flex flex-1 min-h-0 overflow-hidden">
+                <div className="flex flex-col lg:flex-row flex-1 min-h-0 overflow-y-auto lg:overflow-hidden">
                     {/* Left Panel: All Application Info (Scrollable) */}
-                    <div className="flex-1 overflow-y-auto bg-slate-50/30 p-8 custom-scrollbar">
+                    <div className="flex-1 lg:overflow-y-auto bg-slate-50/30 p-6 lg:p-8 custom-scrollbar min-h-0 border-b lg:border-b-0">
                         <div className="max-w-4xl mx-auto space-y-8 pb-12">
+
+                            {/* Level 2 Four-Eyes Check Banner */}
+                            {userRole === AdminLevel.LEVEL_2 && application.recommendations.some(r => r.level === AdminLevel.LEVEL_1) && (
+                                <section className="bg-blue-50/50 rounded-xl border border-blue-200 shadow-sm overflow-hidden mb-6">
+                                    <div className="px-6 py-4 flex items-center justify-between border-b border-blue-100 bg-blue-100/30">
+                                        <div className="flex items-center gap-2">
+                                            <div className="h-8 w-8 rounded bg-blue-600 flex items-center justify-center text-white">
+                                                <Eye className="h-4 w-4" />
+                                            </div>
+                                            <h3 className="font-bold text-blue-900">Four-Eyes Comparison View (L1 Context)</h3>
+                                        </div>
+                                        <Badge className="bg-blue-600">Review Required</Badge>
+                                    </div>
+                                    <div className="p-6">
+                                        <p className="text-sm font-medium text-slate-700 mb-2">Primary L1 Examiner Comments:</p>
+                                        <div className="bg-white p-4 rounded-lg border text-sm text-slate-600 italic border-l-4 border-l-blue-500">
+                                            "{application.recommendations.find(r => r.level === AdminLevel.LEVEL_1)?.comments || "No comments built."}"
+                                        </div>
+                                        <p className="text-xs text-slate-500 mt-2">
+                                            Please verify the original data below against the L1 Officer's remarks to ensure no oversight occurred before moving to final L3 approval.
+                                        </p>
+                                    </div>
+                                </section>
+                            )}
 
                             {/* Section 1: Entity Profile */}
                             <section className="bg-white rounded-xl border shadow-sm overflow-hidden">
                                 <div className="bg-slate-50 px-6 py-4 border-b flex items-center gap-2">
-                                    <div className="h-8 w-8 rounded bg-blue-100 flex items-center justify-center text-blue-600">
+                                    <div className="h-8 w-8 rounded bg-slate-200 flex items-center justify-center text-slate-600">
                                         <FileText className="h-5 w-5" />
                                     </div>
                                     <h3 className="font-bold text-slate-800">Entity Details & Profile</h3>
@@ -199,8 +235,8 @@ export function ApplicationReviewDetail({ application, userRole, onClose }: AppR
                     </div>
 
                     {/* Right Panel: Task-Specific Controls (Fixed) */}
-                    <div className="w-[450px] bg-white border-l flex flex-col shrink-0 overflow-y-auto">
-                        <div className="p-8 space-y-8 pb-12">
+                    <div className="w-full lg:w-[450px] bg-white lg:border-l flex flex-col shrink-0 lg:overflow-y-auto min-h-0">
+                        <div className="p-6 lg:p-8 space-y-6 lg:space-y-8 pb-12">
                             <div className="space-y-2">
                                 <h3 className="text-xl font-black text-slate-900 flex items-center gap-3 uppercase tracking-tighter">
                                     <div className="h-10 w-10 rounded-xl bg-blue-900 text-white flex items-center justify-center">
@@ -217,35 +253,80 @@ export function ApplicationReviewDetail({ application, userRole, onClose }: AppR
                             </div>
 
                             {/* Differentiated Controls: Level Checklists */}
-                            <div className="bg-slate-50 p-6 rounded-xl border space-y-4">
-                                <p className="text-[11px] font-black uppercase tracking-widest text-blue-900 mb-2">{getRoleTerminology(userRole).split(' ')[0]} Checklist</p>
-                                <div className="space-y-3">
-                                    {getLevelChecklist(userRole).map((item, i) => (
-                                        <label key={i} className="flex items-start gap-3 cursor-pointer group">
-                                            <input type="checkbox" className="mt-1 h-4 w-4 rounded border-slate-300 text-blue-900 focus:ring-blue-900" />
-                                            <span className="text-xs font-medium text-slate-600 group-hover:text-slate-900 transition-colors uppercase tracking-tight">{item}</span>
+                            {userRole === AdminLevel.LEVEL_1 && evaluation && (
+                                <div className="bg-slate-50 p-6 rounded-xl border border-blue-100 space-y-4">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <p className="text-[11px] font-black uppercase tracking-widest text-blue-900">Automated System Checks</p>
+                                        <Badge variant="outline" className={cn("text-xs border-none", evaluation.confidence === 'High Confidence' ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800")}>
+                                            {evaluation.confidence}
+                                        </Badge>
+                                    </div>
+                                    <div className="space-y-3">
+                                        {evaluation.flags.map((flag, idx) => (
+                                            <div key={idx} className="flex items-start gap-3">
+                                                {flag.isError ?
+                                                    <XCircle className="h-4 w-4 mt-0.5 text-rose-500 shrink-0" /> :
+                                                    <CheckCircle2 className="h-4 w-4 mt-0.5 text-emerald-500 shrink-0" />
+                                                }
+                                                <div>
+                                                    <p className="text-xs font-bold text-slate-800">{flag.field}</p>
+                                                    <p className={cn("text-[10px] font-medium uppercase tracking-tight", flag.isError ? "text-rose-600" : "text-slate-500")}>
+                                                        {flag.message}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div className="pt-4 border-t border-blue-200/50 mt-4">
+                                        <label htmlFor="ftr-checkbox" className="flex items-start gap-3 cursor-pointer group">
+                                            <input
+                                                id="ftr-checkbox"
+                                                name="isFtr"
+                                                type="checkbox"
+                                                checked={isFtr}
+                                                onChange={(e) => setIsFtr(e.target.checked)}
+                                                className="mt-0.5 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-600 bg-white"
+                                            />
+                                            <div>
+                                                <span className="text-sm font-bold text-blue-900 group-hover:text-blue-700 transition-colors block">Mark as "First Time Right" (FTR)</span>
+                                                <span className="text-[10px] text-slate-500 font-medium leading-tight block mt-0.5">Toggle this if the entity provided perfect documentation on the first attempt without correction cycles.</span>
+                                            </div>
                                         </label>
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="bg-slate-50 p-6 rounded-xl border space-y-4">
+                                <p className="text-[11px] font-black uppercase tracking-widest text-blue-900 mb-2">{isL4RevocationView ? 'Revocation Protocol' : getRoleTerminology(userRole).split(' ')[0] + ' Checklist'}</p>
+                                <div className="space-y-3">
+                                    {(isL4RevocationView ? ["Non-compliance detected", "Fraudulent activity suspected", "Policy violation code 4A"] : getLevelChecklist(userRole)).map((item, i) => (
+                                        <div key={i} className="flex items-start gap-3 group">
+                                            <input id={`checklist-${i}`} name={`checklist-${i}`} type="checkbox" className="mt-1 h-4 w-4 rounded border-slate-300 text-blue-900 focus:ring-blue-900 cursor-pointer" />
+                                            <label htmlFor={`checklist-${i}`} className="text-xs font-medium text-slate-600 group-hover:text-slate-900 transition-colors uppercase tracking-tight cursor-pointer">{item}</label>
+                                        </div>
                                     ))}
                                 </div>
                             </div>
 
                             <div className="space-y-4">
-                                <label className="text-[11px] font-black uppercase tracking-widest text-slate-400">Processing Remarks</label>
+                                <label htmlFor="remarks-textarea" className="text-[11px] font-black uppercase tracking-widest text-slate-400">{isL4RevocationView ? 'Mandatory Reason for Revocation' : 'Processing Remarks'}</label>
                                 <Textarea
-                                    placeholder={`Enter your ${getRoleTerminology(userRole).split(' ')[0].toLowerCase()} remarks here...`}
+                                    id="remarks-textarea"
+                                    name="remarks"
+                                    placeholder={isL4RevocationView ? 'Enter detailed reason for certificate revocation...' : `Enter your ${getRoleTerminology(userRole).split(' ')[0].toLowerCase()} remarks here...`}
                                     className="min-h-[150px] bg-slate-50/50 border-slate-200 focus:bg-white transition-all rounded-xl p-6 text-sm leading-relaxed"
                                     value={comments}
                                     onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setComments(e.target.value)}
                                 />
-                                <div className="p-4 bg-blue-50 rounded-lg text-[10px] text-blue-700 italic border border-blue-100">
-                                    Note: Your remarks will be visible to all subsequent review levels and the applicant (if corrections are requested).
+                                <div className={cn("p-4 rounded-lg text-[10px] italic border", isL4RevocationView ? "bg-rose-50 text-rose-700 border-rose-100" : "bg-blue-50 text-blue-700 border-blue-100")}>
+                                    {isL4RevocationView ? "Warning: Revoking will instantly invalidate the entity's Client ID and x509 Certificate." : "Note: Your remarks will be visible to all subsequent review levels and the applicant (if corrections are requested)."}
                                 </div>
                             </div>
 
                             <div className="space-y-4 pt-4 border-t border-slate-100">
                                 <label className="text-[11px] font-black uppercase tracking-widest text-slate-400">Recommendation Decision</label>
                                 <div className="grid grid-cols-1 gap-3">
-                                    {getRecommendationOptions(userRole).map((opt) => (
+                                    {getRecommendationOptions(userRole, isL4RevocationView).map((opt) => (
                                         <button
                                             key={opt.id}
                                             onClick={() => setRecommendation(opt.id as any)}
@@ -277,12 +358,31 @@ export function ApplicationReviewDetail({ application, userRole, onClose }: AppR
                             <div className="pt-8 border-t">
                                 <Button
                                     className={cn(
-                                        "w-full h-14 font-black uppercase tracking-widest text-sm rounded-xl shadow-lg shadow-blue-900/10 transition-all hover:-translate-y-0.5 active:translate-y-0",
-                                        recommendation ? "bg-blue-900 hover:bg-blue-950 text-white" : "bg-slate-100 text-slate-400 cursor-not-allowed"
+                                        "w-full h-14 font-black uppercase tracking-widest text-sm rounded-xl shadow-lg transition-all hover:-translate-y-0.5 active:translate-y-0",
+                                        recommendation && !isL4RevocationView ? "bg-blue-900 hover:bg-blue-950 text-white shadow-blue-900/10" :
+                                            recommendation && isL4RevocationView ? "bg-rose-600 hover:bg-rose-700 text-white shadow-rose-600/20" :
+                                                "bg-slate-100 text-slate-400 cursor-not-allowed"
                                     )}
-                                    disabled={!recommendation}
+                                    disabled={!recommendation || (isL4RevocationView && comments.trim().length === 0)}
+                                    onClick={() => {
+                                        if (recommendation) {
+                                            const updatedApp = processAction(
+                                                application,
+                                                userRole,
+                                                "current-user-id", // Note: Usually from auth context
+                                                {
+                                                    action: recommendation,
+                                                    comments: comments,
+                                                    isFtr: userRole === AdminLevel.LEVEL_1 ? isFtr : undefined
+                                                }
+                                            );
+                                            console.log("Mock State Transition:", updatedApp);
+                                            alert(`Application ${updatedApp.id} ${isL4RevocationView ? 'has been REVOKED' : `transitioning to ${updatedApp.status}`}`);
+                                            onClose();
+                                        }
+                                    }}
                                 >
-                                    Proceed & Commit {getRoleTerminology(userRole).split(' ')[0]}
+                                    {isL4RevocationView ? 'EXECUTE REVOCATION' : `Proceed & Commit ${getRoleTerminology(userRole).split(' ')[0]}`}
                                 </Button>
                                 <p className="text-[10px] text-center text-slate-400 mt-4 font-medium uppercase tracking-tighter">Secure Audit Log PIN: {Math.floor(1000 + Math.random() * 9000)}-{userRole.charAt(6)}</p>
                             </div>
@@ -341,16 +441,30 @@ function DataField({ label, value, className = "" }: { label: string; value: str
 }
 
 // Helper for dynamic options
-function getRecommendationOptions(role: AdminLevel) {
+function getRecommendationOptions(role: AdminLevel, isL4RevocationView: boolean = false) {
     const nextLevelNum = role === AdminLevel.LEVEL_1 ? 2 : role === AdminLevel.LEVEL_2 ? 3 : 4;
     const nextLevelName = role === AdminLevel.LEVEL_1 ? "Examination" : role === AdminLevel.LEVEL_2 ? "Review" : "Approval";
+
+    if (isL4RevocationView) {
+        return [
+            {
+                id: 'REJECT', // Workflow engine maps L4 REJECT on APPROVED to REVOKE
+                label: 'Revoke Client ID & Certificate',
+                desc: 'Instantly invalidate entity credentials due to non-compliance.',
+                icon: AlertCircle,
+                activeBorder: "border-rose-500 bg-rose-50/50",
+                activeIcon: "bg-rose-500 text-white border-rose-500",
+                activeText: "text-rose-900"
+            }
+        ];
+    }
 
     if (role === AdminLevel.LEVEL_4) {
         return [
             {
                 id: 'APPROVE',
                 label: 'Commit Final Approval',
-                desc: 'Issue registration certificate to the entity.',
+                desc: 'Approve L3 decision. (Note: Client ID was issued at L3)',
                 icon: CheckCircle2,
                 activeBorder: "border-emerald-500 bg-emerald-50/50",
                 activeIcon: "bg-emerald-500 text-white border-emerald-500",

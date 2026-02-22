@@ -1,10 +1,22 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { AdminLevel, User } from "@/types";
 import { MOCK_USERS, getCurrentUser } from "@/lib/auth/mock-auth";
 
 export function UserAccountNav() {
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+
+    // Prevent hydration mismatch by deferring rendering of dynamic auth data to client
+    if (!mounted) {
+        return <div className="animate-pulse h-10 w-32 bg-slate-100 rounded-lg"></div>;
+    }
+
     const activeUser = getCurrentUser();
 
     return (
