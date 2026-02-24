@@ -28,17 +28,20 @@ import { cn } from "@/lib/utils";
 import React, { useMemo } from "react";
 import { validateApplication } from "@/lib/services/validation-service";
 import { processAction } from "@/lib/services/workflow-engine";
+import { commitApplicationUpdate } from "@/constants/mock-data";
 
 interface AppReviewProps {
     application: Application;
     userRole: AdminLevel;
     onClose: () => void;
+    onCommit?: (updated: Application) => void;
 }
 
-export function ApplicationReviewDetail({ application, userRole, onClose }: AppReviewProps) {
+export function ApplicationReviewDetail({ application, userRole, onClose, onCommit }: AppReviewProps) {
     const [comments, setComments] = useState("");
     const [recommendation, setRecommendation] = useState<'APPROVE' | 'REJECT' | 'CORRECTION' | null>(null);
     const [isFtr, setIsFtr] = useState(true);
+    const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
     const canApprove = (userRole === AdminLevel.LEVEL_1 && application.currentLevel === AdminLevel.LEVEL_1) ||
         (userRole === AdminLevel.LEVEL_2 && application.currentLevel === AdminLevel.LEVEL_2) ||
@@ -355,7 +358,14 @@ export function ApplicationReviewDetail({ application, userRole, onClose }: AppR
                                 </div>
                             </div>
 
-                            <div className="pt-8 border-t">
+                            <div className="pt-8 border-t space-y-4">
+                                {/* Success banner — shown after committing */}
+                                {successMsg && (
+                                    <div className="flex items-center gap-3 p-4 bg-emerald-50 border border-emerald-200 rounded-xl text-sm text-emerald-800 font-medium animate-in fade-in">
+                                        <CheckCircle2 className="h-5 w-5 text-emerald-500 shrink-0" />
+                                        {successMsg}
+                                    </div>
+                                )}
                                 <Button
                                     className={cn(
                                         "w-full h-14 font-black uppercase tracking-widest text-sm rounded-xl shadow-lg transition-all hover:-translate-y-0.5 active:translate-y-0",
@@ -363,28 +373,35 @@ export function ApplicationReviewDetail({ application, userRole, onClose }: AppR
                                             recommendation && isL4RevocationView ? "bg-rose-600 hover:bg-rose-700 text-white shadow-rose-600/20" :
                                                 "bg-slate-100 text-slate-400 cursor-not-allowed"
                                     )}
-                                    disabled={!recommendation || (isL4RevocationView && comments.trim().length === 0)}
+                                    disabled={!recommendation || (isL4RevocationView && comments.trim().length === 0) || !!successMsg}
                                     onClick={() => {
                                         if (recommendation) {
                                             const updatedApp = processAction(
                                                 application,
                                                 userRole,
-                                                "current-user-id", // Note: Usually from auth context
+                                                "current-user-id",
                                                 {
                                                     action: recommendation,
                                                     comments: comments,
                                                     isFtr: userRole === AdminLevel.LEVEL_1 ? isFtr : undefined
                                                 }
                                             );
-                                            console.log("Mock State Transition:", updatedApp);
-                                            alert(`Application ${updatedApp.id} ${isL4RevocationView ? 'has been REVOKED' : `transitioning to ${updatedApp.status}`}`);
-                                            onClose();
+                                            commitApplicationUpdate(updatedApp);
+                                            const msg = isL4RevocationView
+                                                ? `Application ${updatedApp.id} has been REVOKED.`
+                                                : `Application ${updatedApp.id} → ${updatedApp.status.replace(/_/g, " ")}. Moved to next stage.`;
+                                            setSuccessMsg(msg);
+                                            setTimeout(() => {
+                                                onCommit ? onCommit(updatedApp) : onClose();
+                                            }, 1800);
                                         }
                                     }}
                                 >
                                     {isL4RevocationView ? 'EXECUTE REVOCATION' : `Proceed & Commit ${getRoleTerminology(userRole).split(' ')[0]}`}
                                 </Button>
-                                <p className="text-[10px] text-center text-slate-400 mt-4 font-medium uppercase tracking-tighter">Secure Audit Log PIN: {Math.floor(1000 + Math.random() * 9000)}-{userRole.charAt(6)}</p>
+                                <p className="text-[10px] text-center text-slate-400 font-medium uppercase tracking-tighter">
+                                    Secure Audit Log PIN: {Math.floor(1000 + Math.random() * 9000)}-{userRole.charAt(6)}
+                                </p>
                             </div>
                         </div>
                     </div>

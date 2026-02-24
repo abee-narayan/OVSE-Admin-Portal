@@ -1,29 +1,26 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
 import "./globals.css";
 import { MainNav } from "@/components/layout/main-nav";
-import { getCurrentUser } from "@/lib/auth/mock-auth";
 import Image from "next/image";
-
-const inter = Inter({ subsets: ["latin"] });
+import { JITElevationModal } from "@/components/admin/jit-elevation-modal";
+import { UserAccountNav } from "@/components/layout/user-account-nav";
 
 export const metadata: Metadata = {
   title: "OVSE Admin Portal",
   description: "UIDAI OVSE Administration and Approval Portal",
 };
 
-import { UserAccountNav } from "@/components/layout/user-account-nav";
+
 
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const user = getCurrentUser();
 
   return (
     <html lang="en">
-      <body className={`${inter.className} min-h-screen flex flex-col bg-slate-50`}>
+      <body className="min-h-screen flex flex-col bg-slate-50" style={{ fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif' }}>
         {/* Header */}
         <header className="sticky top-0 z-50 w-full border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60">
           <div className="container mx-auto flex h-16 items-center justify-between px-4">
@@ -39,7 +36,7 @@ export default function RootLayout({
                   <p className="text-[10px] text-slate-400">Government of India</p>
                 </div>
               </div>
-              <MainNav userRole={user.role} />
+              <MainNav />
             </div>
             <div className="flex items-center gap-4">
               <UserAccountNav />
@@ -55,6 +52,7 @@ export default function RootLayout({
         <main className="flex-1 container mx-auto py-8 px-4">
           {children}
         </main>
+        <JITElevationModal />
 
         {/* Footer */}
         <footer className="bg-gradient-to-r from-slate-900 to-blue-900 text-white py-12">
