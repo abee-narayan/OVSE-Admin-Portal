@@ -15,7 +15,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { AdminLevel } from "@/types";
 import { Trophy, Zap, Clock, CheckCircle2 } from "lucide-react";
-import { ApplicationTable } from "./application-table";
+
 
 const efficiencyData = [
     { name: 'Mon', count: 12 },
@@ -118,18 +118,6 @@ export function EfficiencyHub({ level }: { level: AdminLevel }) {
                                 Keep processing to climb the leaderboard and earn "Elite Scrutinizer" badge!
                             </p>
                         </div>
-                    </CardContent>
-                </Card>
-            </div>
-
-            <div className="pt-4">
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Recent Activities</CardTitle>
-                        <CardDescription>Applications assigned to your scrutiny queue</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <ApplicationTable level={level} />
                     </CardContent>
                 </Card>
             </div>

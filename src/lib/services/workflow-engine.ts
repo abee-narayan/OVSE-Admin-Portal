@@ -83,20 +83,12 @@ export const processAction = (
                 updatedApp.client_id = generateUUID();
                 updatedApp.x509_certificate = generateMockX509Cert(application.data?.technicalInfo?.publicKey);
 
-                // Trigger Webhook to OVSE portal (Native Fetch)
-                fetch('https://api.ovse-env.production/webhooks/fulfillment', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        client_id: updatedApp.client_id,
-                        entityName: updatedApp.entityName,
-                        status: 'ACTIVE',
-                        certificate: updatedApp.x509_certificate
-                    })
-                }).then(async (response) => {
-                    console.log(`[Webhook Success] OVSE portal updated.`, await response.json().catch(() => ({})));
-                }).catch((error) => {
-                    console.error(`[Webhook Failed] Could not reach OVSE portal.`, error);
+                // [MOCK] Simulate webhook to OVSE portal — no real network call in demo
+                console.log(`[Webhook Simulation] L3 Approved → OVSE portal notified`, {
+                    client_id: updatedApp.client_id,
+                    entityName: updatedApp.entityName,
+                    status: 'ACTIVE',
+                    certificate: updatedApp.x509_certificate,
                 });
 
             } else {

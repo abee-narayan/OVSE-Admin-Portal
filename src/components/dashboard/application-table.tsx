@@ -1,20 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow
+    Table, TableBody, TableCell, TableHead, TableHeader, TableRow
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MOCK_APPLICATIONS } from "@/constants/mock-data";
+import { Input } from "@/components/ui/input";
+import { getApplications, subscribeApplications } from "@/constants/mock-data";
 import { Application, ApplicationStatus, AdminLevel } from "@/types";
 import { Eye, Search, Filter } from "lucide-react";
-import { Input } from "@/components/ui/input";
 import { ApplicationReviewDetail } from "./application-review-detail";
 
 const statusColors: Record<ApplicationStatus, string> = {
@@ -27,18 +22,49 @@ const statusColors: Record<ApplicationStatus, string> = {
 };
 
 export function ApplicationTable({ level }: { level: AdminLevel }) {
+    const [apps, setApps] = useState<Application[]>(() => getApplications());
     const [selectedApp, setSelectedApp] = useState<Application | null>(null);
+    const [search, setSearch] = useState("");
+
+    // Re-render whenever the store is updated (after approve/reject)
+    useEffect(() => {
+        const unsub = subscribeApplications(() => setApps(getApplications()));
+        return unsub;
+    }, []);
+
+    // Also listen for the window event (cross-component)
+    useEffect(() => {
+        const handler = () => setApps(getApplications());
+        window.addEventListener("app-store-update", handler);
+        return () => window.removeEventListener("app-store-update", handler);
+    }, []);
+
+    const filtered = apps.filter(app => {
+        const matchesLevel =
+            level === AdminLevel.LEVEL_4
+                ? app.currentLevel === AdminLevel.LEVEL_4 || app.status === ApplicationStatus.ACTIVE
+                : app.currentLevel === level;
+        const matchesSearch =
+            !search ||
+            app.entityName.toLowerCase().includes(search.toLowerCase()) ||
+            app.id.toLowerCase().includes(search.toLowerCase());
+        return matchesLevel && matchesSearch;
+    });
 
     return (
         <div className="space-y-4">
             <div className="flex items-center justify-between gap-4">
                 <div className="relative flex-1 max-w-sm">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input placeholder="Search applications..." className="pl-10" />
+                    <Input
+                        placeholder="Search applications..."
+                        className="pl-10"
+                        value={search}
+                        onChange={e => setSearch(e.target.value)}
+                    />
                 </div>
                 <Button variant="outline" size="sm" className="gap-2">
-                    <Filter className="h-4 w-4" />
-                    Filter
+                    <Filter className="h-4 w-4" /> Filter
                 </Button>
             </div>
 
@@ -47,7 +73,7 @@ export function ApplicationTable({ level }: { level: AdminLevel }) {
                     <TableHeader>
                         <TableRow className="bg-slate-50">
                             <TableHead className="w-[120px]">App ID</TableHead>
-                            <TableHead>Organization Name</TableHead>
+                            <TableHead>Organisation Name</TableHead>
                             <TableHead>Category</TableHead>
                             <TableHead>Date Received</TableHead>
                             <TableHead>Status</TableHead>
@@ -55,37 +81,47 @@ export function ApplicationTable({ level }: { level: AdminLevel }) {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {MOCK_APPLICATIONS.filter(app => {
-                            if (level === AdminLevel.LEVEL_4) {
-                                return app.currentLevel === AdminLevel.LEVEL_4 || app.status === ApplicationStatus.ACTIVE;
-                            }
-                            return app.currentLevel === level;
-                        }).map((app) => (
-                            <TableRow key={app.id}>
-                                <TableCell className="font-medium">{app.id}</TableCell>
-                                <TableCell>{app.entityName}</TableCell>
-                                <TableCell>{app.entityCategory}</TableCell>
-                                <TableCell>{app.submissionDate}</TableCell>
-                                <TableCell>
-                                    <Badge variant="outline" className={statusColors[app.status]}>
-                                        {app.status.replace(/_/g, ' ')}
-                                    </Badge>
-                                </TableCell>
-                                <TableCell className="text-right">
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="gap-2 text-primary hover:text-primary hover:bg-primary/5"
-                                        onClick={() => setSelectedApp(app)}
-                                    >
-                                        <Eye className="h-4 w-4" />
-                                        Review
-                                    </Button>
+                        {filtered.length === 0 ? (
+                            <TableRow>
+                                <TableCell colSpan={6} className="text-center py-10 text-slate-400 text-sm">
+                                    No applications at this level.
                                 </TableCell>
                             </TableRow>
-                        ))}
+                        ) : (
+                            filtered.map((app) => (
+                                <TableRow key={app.id}>
+                                    <TableCell className="font-medium">{app.id}</TableCell>
+                                    <TableCell>{app.entityName}</TableCell>
+                                    <TableCell>{app.entityCategory}</TableCell>
+                                    <TableCell>{app.submissionDate}</TableCell>
+                                    <TableCell>
+                                        <Badge variant="outline" className={statusColors[app.status]}>
+                                            {app.status.replace(/_/g, " ")}
+                                        </Badge>
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="gap-2 text-primary hover:text-primary hover:bg-primary/5"
+                                            onClick={() => setSelectedApp(app)}
+                                        >
+                                            <Eye className="h-4 w-4" />
+                                            Review
+                                        </Button>
+                                    </TableCell>
+                                </TableRow>
+                            ))
+                        )}
                     </TableBody>
                 </Table>
+            </div>
+
+            {/* Pagination hint */}
+            <div className="flex items-center justify-between px-2 pt-2">
+                <p className="text-xs text-muted-foreground">
+                    Showing {filtered.length} application{filtered.length !== 1 ? "s" : ""}
+                </p>
             </div>
 
             {selectedApp && (
@@ -93,16 +129,12 @@ export function ApplicationTable({ level }: { level: AdminLevel }) {
                     application={selectedApp}
                     userRole={level}
                     onClose={() => setSelectedApp(null)}
+                    onCommit={(updated) => {
+                        setSelectedApp(null);
+                        setApps(getApplications());
+                    }}
                 />
             )}
-
-            <div className="flex items-center justify-between px-2 pt-4">
-                <p className="text-xs text-muted-foreground">Showing 4 of 287 applications</p>
-                <div className="flex gap-2">
-                    <Button variant="outline" size="sm" disabled>Previous</Button>
-                    <Button variant="outline" size="sm">Next</Button>
-                </div>
-            </div>
         </div>
     );
 }

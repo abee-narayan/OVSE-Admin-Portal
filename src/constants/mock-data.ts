@@ -1,6 +1,7 @@
 import { Application, ApplicationStatus, AdminLevel } from "@/types";
 
-export const MOCK_APPLICATIONS: Application[] = [
+// ─── Seed data ────────────────────────────────────────────────────────────────
+const SEED: Application[] = [
     {
         id: "APP-001",
         entityName: "Innovate Inc.",
@@ -16,20 +17,20 @@ export const MOCK_APPLICATIONS: Application[] = [
                 pincode: "500081",
                 registrationNumber: "U72200TG2020PTC123456",
                 dateOfIncorporation: "12-01-2020",
-                website: "https://innovateinc.com"
+                website: "https://innovateinc.com",
             },
             contactPerson: {
                 name: "Rahul Sharma",
                 designation: "Managing Director",
                 mobile: "+91 9876543210",
-                email: "rahul@innovateinc.com"
+                email: "rahul@innovateinc.com",
             },
             statutoryInfo: {
                 panNumber: "ABCDE1234F",
                 gstNumber: "36ABCDE1234F1Z5",
-                tanNumber: "CHNA12345B"
-            }
-        }
+                tanNumber: "CHNA12345B",
+            },
+        },
     },
     {
         id: "APP-002",
@@ -42,10 +43,10 @@ export const MOCK_APPLICATIONS: Application[] = [
             {
                 level: AdminLevel.LEVEL_1,
                 recommenderId: "l1-001",
-                action: 'APPROVE',
-                comments: "All documents verified. Organization structure is clear.",
+                action: "APPROVE",
+                comments: "All documents verified. Organisation structure is clear.",
                 timestamp: "2025-08-16T10:00:00Z",
-            }
+            },
         ],
     },
     {
@@ -77,24 +78,57 @@ export const MOCK_APPLICATIONS: Application[] = [
             {
                 level: AdminLevel.LEVEL_1,
                 recommenderId: "l1-002",
-                action: 'APPROVE',
+                action: "APPROVE",
                 comments: "Initial scrutiny passed. Documents are in order.",
                 timestamp: "2025-08-19T09:00:00Z",
             },
             {
                 level: AdminLevel.LEVEL_2,
                 recommenderId: "l2-002",
-                action: 'APPROVE',
+                action: "APPROVE",
                 comments: "Examination confirmed legitimacy. Recommend review.",
                 timestamp: "2025-08-19T11:00:00Z",
             },
             {
                 level: AdminLevel.LEVEL_3,
                 recommenderId: "l3-002",
-                action: 'APPROVE',
+                action: "APPROVE",
                 comments: "AD review complete. Forwarding to Director for final sign-off.",
                 timestamp: "2025-08-19T14:00:00Z",
-            }
+            },
         ],
     },
 ];
+
+// ─── Mutable in-memory store ──────────────────────────────────────────────────
+let applications: Application[] = [...SEED];
+
+// Listeners for reactive updates
+const listeners = new Set<() => void>();
+
+function notify() {
+    if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("app-store-update"));
+    }
+    listeners.forEach(fn => fn());
+}
+
+/** Keep for the old import path that ApplicationTable uses */
+export const MOCK_APPLICATIONS = applications;
+
+/** Get a live snapshot of all applications */
+export function getApplications(): Application[] {
+    return applications;
+}
+
+/** Persist an updated application returned by processAction */
+export function commitApplicationUpdate(updated: Application) {
+    applications = applications.map(a => (a.id === updated.id ? updated : a));
+    notify();
+}
+
+/** Subscribe to store changes (returns unsubscribe fn) */
+export function subscribeApplications(fn: () => void): () => void {
+    listeners.add(fn);
+    return () => listeners.delete(fn);
+}

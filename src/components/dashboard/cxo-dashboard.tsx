@@ -100,7 +100,7 @@ export function CXODashboard() {
                         <CardDescription>Current distribution of partner applications</CardDescription>
                     </CardHeader>
                     <CardContent className="h-[350px] flex flex-col items-center justify-center">
-                        <ResponsiveContainer width="100%" height="250px">
+                        <ResponsiveContainer width="100%" height={250}>
                             <PieChart>
                                 <Pie
                                     data={statusDistribution}
