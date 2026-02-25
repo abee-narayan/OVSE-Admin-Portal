@@ -13,9 +13,12 @@ import { Eye, Search, Filter } from "lucide-react";
 import { ApplicationReviewDetail } from "./application-review-detail";
 
 const statusColors: Record<ApplicationStatus, string> = {
+    [ApplicationStatus.DRAFT]: "bg-amber-50 text-amber-700 border-amber-200",
     [ApplicationStatus.SUBMITTED]: "bg-orange-100 text-orange-700 border-orange-200",
     [ApplicationStatus.L1_REJECTED]: "bg-red-100 text-red-700 border-red-200",
     [ApplicationStatus.L1_APPROVED]: "bg-blue-100 text-blue-700 border-blue-200",
+    [ApplicationStatus.L2_REJECTED]: "bg-red-100 text-red-800 border-red-300",
+    [ApplicationStatus.LOW_QUALITY]: "bg-red-200 text-red-900 border-red-400",
     [ApplicationStatus.L2_APPROVED]: "bg-cyan-100 text-cyan-700 border-cyan-200",
     [ApplicationStatus.ACTIVE]: "bg-emerald-100 text-emerald-700 border-emerald-200",
     [ApplicationStatus.REVOKED]: "bg-rose-100 text-rose-700 border-rose-200",

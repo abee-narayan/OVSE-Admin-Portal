@@ -6,9 +6,12 @@ export enum AdminLevel {
 }
 
 export enum ApplicationStatus {
+    DRAFT = 'DRAFT',
     SUBMITTED = 'SUBMITTED',
     L1_REJECTED = 'L1_REJECTED',
     L1_APPROVED = 'L1_APPROVED',
+    L2_REJECTED = 'L2_REJECTED',
+    LOW_QUALITY = 'LOW_QUALITY',
     L2_APPROVED = 'L2_APPROVED',
     ACTIVE = 'ACTIVE',
     REVOKED = 'REVOKED',
@@ -35,6 +38,14 @@ export interface Application {
         comments: string;
         timestamp: string;
     }[];
+    // Draft / Nudge tracking
+    draftStartedAt?: string;       // ISO — when the entity started the draft
+    nudgedByL1Id?: string;         // L1 agent who nudged this draft
+    nudgedByL1Name?: string;
+    nudgeTimestamp?: string;        // ISO
+    lowQualityFlag?: boolean;      // set by L2 on rejection → penalises nudging L1
+    lowQualityReason?: string;
+    // Existing optional fields
     is_ftr?: boolean;
     l1_comments?: string;
     l1_approved_by?: string;
