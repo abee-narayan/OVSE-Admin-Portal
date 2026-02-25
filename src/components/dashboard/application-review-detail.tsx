@@ -28,7 +28,8 @@ import { cn } from "@/lib/utils";
 import React, { useMemo } from "react";
 import { validateApplication } from "@/lib/services/validation-service";
 import { processAction } from "@/lib/services/workflow-engine";
-import { commitApplicationUpdate } from "@/constants/mock-data";
+import { commitApplicationUpdate, markLowQuality } from "@/constants/mock-data";
+import { ShieldAlert } from "lucide-react";
 
 interface AppReviewProps {
     application: Application;
@@ -42,6 +43,7 @@ export function ApplicationReviewDetail({ application, userRole, onClose, onComm
     const [recommendation, setRecommendation] = useState<'APPROVE' | 'REJECT' | 'CORRECTION' | null>(null);
     const [isFtr, setIsFtr] = useState(true);
     const [successMsg, setSuccessMsg] = useState<string | null>(null);
+    const [isLowQualityPush, setIsLowQualityPush] = useState(false);
 
     const canApprove = (userRole === AdminLevel.LEVEL_1 && application.currentLevel === AdminLevel.LEVEL_1) ||
         (userRole === AdminLevel.LEVEL_2 && application.currentLevel === AdminLevel.LEVEL_2) ||
@@ -324,6 +326,49 @@ export function ApplicationReviewDetail({ application, userRole, onClose, onComm
                                 <div className={cn("p-4 rounded-lg text-[10px] italic border", isL4RevocationView ? "bg-rose-50 text-rose-700 border-rose-100" : "bg-blue-50 text-blue-700 border-blue-100")}>
                                     {isL4RevocationView ? "Warning: Revoking will instantly invalidate the entity's Client ID and x509 Certificate." : "Note: Your remarks will be visible to all subsequent review levels and the applicant (if corrections are requested)."}
                                 </div>
+
+                                {/* L2 Low Quality — toggle button, appears when REJECT is selected */}
+                                {userRole === AdminLevel.LEVEL_2 && recommendation === 'REJECT' && (
+                                    <div className="mt-2 space-y-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => setIsLowQualityPush(v => !v)}
+                                            className={cn(
+                                                "w-full flex items-center gap-4 p-4 rounded-xl border-2 font-semibold transition-all duration-200 text-left",
+                                                isLowQualityPush
+                                                    ? "border-red-500 bg-red-50 text-red-800 shadow-sm shadow-red-100"
+                                                    : "border-slate-200 bg-white text-slate-500 hover:border-red-200 hover:bg-red-50/40"
+                                            )}
+                                        >
+                                            <div className={cn(
+                                                "h-10 w-10 shrink-0 rounded-lg flex items-center justify-center border-2 transition-all",
+                                                isLowQualityPush
+                                                    ? "bg-red-500 border-red-500 text-white"
+                                                    : "bg-white border-slate-200 text-slate-300"
+                                            )}>
+                                                <ShieldAlert className="h-5 w-5" />
+                                            </div>
+                                            <div className="flex-1">
+                                                <p className={cn(
+                                                    "text-sm font-black uppercase tracking-tighter",
+                                                    isLowQualityPush ? "text-red-800" : "text-slate-500"
+                                                )}>
+                                                    {isLowQualityPush ? "✓ Marked as Low Quality Push" : "Mark as Low Quality Push"}
+                                                </p>
+                                                <p className="text-[10px] font-medium text-slate-400 mt-0.5">
+                                                    Penalises the L1 officer who nudged this applicant (score −2×).
+                                                </p>
+                                            </div>
+                                        </button>
+                                        {isLowQualityPush && (
+                                            <div className="flex items-start gap-2 px-4 py-2.5 rounded-lg bg-red-50 border border-red-200 text-[10px] text-red-700">
+                                                <ShieldAlert className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                                                This action will record a KPI penalty for the L1 officer who nudged this draft.
+                                                The application will be flagged as <strong>Low Quality</strong> in the system.
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
                             </div>
 
                             <div className="space-y-4 pt-4 border-t border-slate-100">
@@ -387,9 +432,15 @@ export function ApplicationReviewDetail({ application, userRole, onClose, onComm
                                                 }
                                             );
                                             commitApplicationUpdate(updatedApp);
+                                            // If L2 rejected and marked low quality, fire the penalty
+                                            if (userRole === AdminLevel.LEVEL_2 && recommendation === 'REJECT' && isLowQualityPush) {
+                                                markLowQuality(application.id, comments || "Marked as low quality by L2 reviewer.");
+                                            }
                                             const msg = isL4RevocationView
                                                 ? `Application ${updatedApp.id} has been REVOKED.`
-                                                : `Application ${updatedApp.id} → ${updatedApp.status.replace(/_/g, " ")}. Moved to next stage.`;
+                                                : isLowQualityPush
+                                                    ? `Application ${updatedApp.id} marked as LOW QUALITY. L1 KPI will be penalised.`
+                                                    : `Application ${updatedApp.id} → ${updatedApp.status.replace(/_/g, " ")}. Moved to next stage.`;
                                             setSuccessMsg(msg);
                                             setTimeout(() => {
                                                 onCommit ? onCommit(updatedApp) : onClose();

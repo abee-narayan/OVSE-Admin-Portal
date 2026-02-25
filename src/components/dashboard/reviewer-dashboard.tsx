@@ -11,8 +11,9 @@ import {
     Cell
 } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Users, FileBarChart, LineChart, Target } from "lucide-react";
+import { Users, FileBarChart, LineChart, Target, FileEdit } from "lucide-react";
 import { ApplicationTable } from "./application-table";
+import { DraftApplicationsPanel } from "./draft-applications-panel";
 import { AdminLevel } from "@/types";
 
 const teamEfficiency = [
@@ -73,6 +74,22 @@ export function ReviewerDashboard() {
                             </Bar>
                         </BarChart>
                     </ResponsiveContainer>
+                </CardContent>
+            </Card>
+
+            {/* Draft Applications Monitor — read-only for L3 */}
+            <Card className="border-amber-100 overflow-hidden">
+                <CardHeader className="bg-gradient-to-r from-amber-50 to-orange-50 border-b border-amber-100">
+                    <CardTitle className="text-sm font-black uppercase tracking-widest text-amber-800 flex items-center gap-2">
+                        <FileEdit className="h-4 w-4" />
+                        Draft Applications Monitor
+                    </CardTitle>
+                    <CardDescription className="text-xs text-amber-700">
+                        Oversight view — all applications by entities still in draft stage, and which L1 officers have nudged them.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="pt-5">
+                    <DraftApplicationsPanel readOnly={true} />
                 </CardContent>
             </Card>
 
